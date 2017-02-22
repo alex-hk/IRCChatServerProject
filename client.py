@@ -21,10 +21,10 @@ print 'Socket Connected to ' + HOST + ' on port ' + PORT
 
 while 1:
     msg = raw_input(UNAME + ": ")
-    data = '{"uname": UNAME, "message": msg}'
-    print msg
+    data = {'uname': UNAME, 'message': msg}
+    udata = json.dumps(data)
     try:
-        s.sendall(data)
+        s.sendall(udata)
     except socket.error:
         print 'Send failed'
         sys.exit()

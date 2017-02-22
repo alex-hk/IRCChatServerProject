@@ -11,13 +11,15 @@ class ServerHandler(asyncore.dispatcher_with_send):
     def handle_read(self):
         data = self.recv(1024)
         if data:
-            uname = data.uname
-            umsg = data.msg
+            udata = json.loads(data)
+            umsg = udata["message"]
+            uname = udata["uname"]
+            
 
             localtime = time.localtime(time.time())
             utime = "{}:{}:{} - ".format(localtime.tm_hour, localtime.tm_min, localtime.tm_sec) 
-            fmsg = utime + data[0] + ': ' + umsg
-            print 'Received message from ' + data[0] + ': ' + umsg
+            fmsg = utime + uname + ': ' + umsg
+            print 'Received message from ' + uname + ': ' + umsg
             print 'Formatted message: ' + fmsg
             if (umsg == "/quit") or (umsg == "/exit"):
                 self.close()
