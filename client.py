@@ -22,6 +22,7 @@ print 'Socket Connected to ' + HOST + ' on port ' + PORT
 while 1:
     msg = raw_input(UNAME + ": ")
     data = '{"uname": UNAME, "message": msg}'
+    print msg
     try:
         s.sendall(data)
     except socket.error:
@@ -32,5 +33,5 @@ while 1:
        s.close()
        sys.exit()
 
-    reply = recv(1024)
+    reply = s.recv(1024)
     print reply

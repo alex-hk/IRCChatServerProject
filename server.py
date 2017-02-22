@@ -1,47 +1,49 @@
 import socket
 import sys
 import json
-import thread
+import asyncore
+import time
 
-host = 'localhost'
-port = 5555
-saddr = ('localhost', 5555)
+HOST = 'localhost'
+PORT = 5555
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print 'Socket Created'
+class ServerHandler(asyncore.dispatcher_with_send):
+    def handle_read(self):
+        data = self.recv(1024)
+        if data:
+            uname = data.uname
+            umsg = data.msg
 
-try:
-    s.bind(saddr)
-except socket.error, msg:
-    print 'Bind Failed. Error Code: ' + str(msg[0]) + ' Error Message: ' + msg[1]
-    sys.exit(1)
+            localtime = time.localtime(time.time())
+            utime = "{}:{}:{} - ".format(localtime.tm_hour, localtime.tm_min, localtime.tm_sec) 
+            fmsg = utime + data[0] + ': ' + umsg
+            print 'Received message from ' + data[0] + ': ' + umsg
+            print 'Formatted message: ' + fmsg
+            if (umsg == "/quit") or (umsg == "/exit"):
+                self.close()
+                sys.exit()
+        
+            self.sendall(fmsg)
 
-print 'Socket Bound'
+class ServerSocket(asyncore.dispatcher):
+    def __init__(self, host, port):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        print 'Socket created'
+        self.set_reuse_addr()
+        self.bind((host, port))
+        print 'Socket bound'
+        self.listen(5)
+        print 'Socket listening on port ', PORT
+    def handle_accept(self):
+        pair = self.accept()
+        if pair is not None:
+            sock, address = pair
+            print "Connected from ", address
+            ServerHandler(sock)
 
-s.listen(5)
+    def handle_close(self):
+        self.close()
 
-print 'Socket Listening'
-
-def cthreads(user):
-    user.send('Test IRC chat. Type \'/help\' for help')
-
-    while True:
-        data = user.recv(1024)
-        umsg = data[1]
-
-        if not data: break
-        localtime = time.localtime(time.time())
-        if (umsg == "/quit") or (umsg == "/exit"):
-            user.close()
-        user.sendall(localtime.tm_hour + ':' + localtime.tm_min + ':' + localtime.tm_sec + ' - ' + data[0] + ': ' + umsg)
-    user.close()
-
-
-while True:
-    user, addr = s.accept()
-    print 'Connected with ' + addr[0] + ':' + str(addr[1])
-
-    start_new_thread(cthreads ,(user,))
-
-s.close()
-
+server = ServerSocket(HOST, PORT)
+asyncore.loop()
