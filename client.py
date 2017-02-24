@@ -2,38 +2,35 @@ import socket
 import sys
 import json
 import time
+import asyncore
 
 UNAME = raw_input("Username: ")
 HOST = raw_input("Hostname: ")
 PORT = raw_input("Port: ")
 saddr = (HOST, int(PORT)) 
 
-try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-except socket.error, msg:
-    print 'Socket failed. Error Code: ' + str(msg[0]) + ' Error Message: ' + msg[1]
+class Client(asyncore.dispatcher):
+    def __init__(self):
+        self.socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print 'Socket created'
+        self.connect(saddr)
+        print 'Socket connected to ', HOST
 
-print 'Socket Created Successfully'
+    def handle_write(self):
+        msg = raw_input(UNAME + ": ")
+        data = {'uname': UNAME, 'message': msg}
+        udata = json.dumps(data)
+        try:
+            self.sendall(udata)
+        except socket.error:
+            print 'Send failed'
+            sys.exit()
 
-s.connect(saddr)
+        if msg == "/quit" or msg == "/exit":
+            self.close()
+            sys.exit()
+    
+    def handle_read(self):
+        message = self.recv(1024)
 
-print 'Socket Connected to ' + HOST + ' on port ' + PORT
-
-while 1:
-    msg = raw_input(UNAME + ": ")
-    data = {'uname': UNAME, 'message': msg}
-    udata = json.dumps(data)
-    try:
-        s.sendall(udata)
-        #print 'Data sent'
-    except socket.error:    
-        print 'Send failed'
-        sys.exit()
-
-    if msg == "/quit" or msg == "/exit":
-        s.close()
-        sys.exit()
-
-    reply = s.recv(1024)
-    print reply
-
+asyncore.loop()
