@@ -13,12 +13,11 @@ class ServerHandler(asyncore.dispatcher_with_send):
     def __init__(self, socket, server):
         self.sock = socket
         self.server = server
+        self.out = collections.deque()
 
     def handle_read(self):
-        self.data = self.recv(1024)
-        self.server.broadcast(self.data)
-
-    def parsemsg(self, data): 
+        data = self.recv(1024)
+        print 'Received data'
         if data:
             udata = json.loads(data)
             
@@ -32,12 +31,17 @@ class ServerHandler(asyncore.dispatcher_with_send):
             print 'Formatted message: ' + fmsg
             if (umsg == "/quit") or (umsg == "/exit"):
                 self.close()
-                sys.exit()
-            return fmsg
-    
+
+            self.server.broadcast(fmsg)
+
+    def say(self, message):
+        self.out.append(message)
+
     def handle_write(self):
-        data = parsemsg(self.data)
-        self.sendall(fmsg)
+        if not self.out:
+            return
+        msg = self.out.popleft()
+        self.sendall(msg)
 
 
 class ServerSocket(asyncore.dispatcher):
@@ -58,13 +62,14 @@ class ServerSocket(asyncore.dispatcher):
             sock, address = pair
             print "Connected from ", address
             self.clients.append(ServerHandler(sock, self))
+            print "Client {} added".format(address)
 
     def handle_close(self):
         self.close()
 
     def broadcast(self, msg):
         for client in self.clients:
-            client.handle_write(msg)
+            client.say(msg)
 
 server = ServerSocket(HOST, PORT)
 asyncore.loop()

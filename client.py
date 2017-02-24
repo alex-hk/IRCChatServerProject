@@ -25,6 +25,7 @@ while 1:
     udata = json.dumps(data)
     try:
         s.sendall(udata)
+        print 'Data sent'
     except socket.error:    
         print 'Send failed'
         sys.exit()
