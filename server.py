@@ -47,7 +47,7 @@ class ServerHandler(asyncore.dispatcher):
             return
         msg = self.out.popleft()
         print 'Sending message: ',msg
-        self.sendall(msg)
+        self.send(msg)
 
 
 class ServerSocket(asyncore.dispatcher):

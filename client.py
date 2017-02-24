@@ -6,15 +6,16 @@ import asyncore
 
 UNAME = raw_input("Username: ")
 HOST = raw_input("Hostname: ")
-PORT = raw_input("Port: ")
-saddr = (HOST, int(PORT)) 
+PORT = input("Port: ")
+saddr = (HOST, PORT) 
 
 class Client(asyncore.dispatcher):
-    def __init__(self):
-        self.socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def __init__(self, host, port):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         print 'Socket created'
-        self.connect(saddr)
-        print 'Socket connected to ', HOST
+        self.connect((host, port))
+        print 'Socket connected to ', host
 
     def handle_write(self):
         msg = raw_input(UNAME + ": ")
@@ -32,5 +33,7 @@ class Client(asyncore.dispatcher):
     
     def handle_read(self):
         message = self.recv(1024)
+        print message
 
+client = Client(HOST, PORT)
 asyncore.loop()
