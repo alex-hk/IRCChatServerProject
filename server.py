@@ -8,13 +8,13 @@ import collections
 HOST = 'localhost'
 PORT = 5555
 
-class ServerHandler(asyncore.dispatcher_with_send):
+class ServerHandler(asyncore.dispatcher):
 
     def __init__(self, socket, server):
-        self.sock = socket
+        asyncore.dispatcher.__init__(self, socket)
         self.server = server
         self.out = collections.deque()
-
+    
     def handle_read(self):
         data = self.recv(1024)
         print 'Received data'
@@ -31,16 +31,22 @@ class ServerHandler(asyncore.dispatcher_with_send):
             print 'Formatted message: ' + fmsg
             if (umsg == "/quit") or (umsg == "/exit"):
                 self.close()
+                self.server.broadcast(utime + ' - User {} has disconnected'.format(uname))
 
+            #self.sendall(fmsg)
             self.server.broadcast(fmsg)
+       
 
     def say(self, message):
+        print 'Putting {} in outbox'.format(message)
         self.out.append(message)
 
     def handle_write(self):
         if not self.out:
+            #print 'Outbox failure'
             return
         msg = self.out.popleft()
+        print 'Sending message: ',msg
         self.sendall(msg)
 
 
@@ -68,7 +74,9 @@ class ServerSocket(asyncore.dispatcher):
         self.close()
 
     def broadcast(self, msg):
+        print 'Broadcasting to all ----------------'
         for client in self.clients:
+            print 'Broadcasting to client ',client
             client.say(msg)
 
 server = ServerSocket(HOST, PORT)
